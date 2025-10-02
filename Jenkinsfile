@@ -12,11 +12,14 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'pytest tests/ --junitxml=report.xml'
+                sh """
+                docker build -f Dockerfile -t etl-test .
+                docker run --rm etl-test pytest tests/ --junitxml=report.xml
+                """
             }
             post {
                 always {
-                    junit 'report.xml'  // publish results
+                    junit 'report.xml'
                 }
             }
         }
