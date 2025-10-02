@@ -2,20 +2,23 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "my-etl-image:latest"
+        DOCKER_IMAGE = "etl-image:latest"
         INPUT_CSV = "input.csv"
         OUTPUT_CSV = "output.csv"
     }
 
     stages {
-        
+        stage('Build Docker Image') {
+            steps {
+                // Build image
+                sh "docker build -t ${DOCKER_IMAGE} ."
+            }
+        }
 
         stage('Run Tests') {
             steps {
-                sh """
-                docker build -f Dockerfile -t etl-test .
-                docker run --rm etl-test pytest tests/ --junitxml=report.xml
-                """
+                // Run pytest inside the container
+                sh "docker run --rm ${DOCKER_IMAGE} -m pytest tests/ --junitxml=report.xml"
             }
             post {
                 always {
@@ -24,15 +27,10 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh "docker build -t ${DOCKER_IMAGE} ."
-            }
-        }
-
         stage('Run Docker Container') {
             steps {
-                sh "docker run --rm -v \$(pwd)/${INPUT_CSV}:/app/${INPUT_CSV} -v \$(pwd)/${OUTPUT_CSV}:/app/${OUTPUT_CSV} ${DOCKER_IMAGE}"
+                // Run ETL script
+                sh "docker run --rm -v \$(pwd)/${INPUT_CSV}:/app/${INPUT_CSV} -v \$(pwd)/${OUTPUT_CSV}:/app/${OUTPUT_CSV} ${DOCKER_IMAGE} etl.py ${INPUT_CSV} ${OUTPUT_CSV}"
             }
         }
     }
@@ -40,11 +38,9 @@ pipeline {
     post {
         success {
             echo 'Pipeline completed successfully!'
-            
         }
         failure {
             echo 'Pipeline failed!'
-            
         }
     }
 }
