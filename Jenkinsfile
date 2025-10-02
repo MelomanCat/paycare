@@ -17,8 +17,11 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Run pytest inside the container
-                sh "docker run --rm ${DOCKER_IMAGE} -m pytest tests/ --junitxml=report.xml"
+                script {
+                    docker.image('etl-image:latest').inside {
+                        sh 'pytest tests/ --junitxml=report.xml'
+                    }
+                }
             }
             post {
                 always {
