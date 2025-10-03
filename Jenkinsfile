@@ -19,12 +19,12 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Use volume jenkins-data, common for both containers
                     sh """
                         docker run --rm \
                         -v jenkins-data:/var/jenkins_home \
-                        -w /var/jenkins_home/workspace/${env.JOB_NAME} \
-                        ${DOCKER_IMAGE} -m pytest tests/ --junitxml=report.xml
+                        -w /var/jenkins_home/workspace/\${JOB_NAME} \
+                        --entrypoint /bin/sh \
+                        ${DOCKER_IMAGE} -c 'python3 -m pip list && python3 -m pytest tests/ --junitxml=report.xml'
                     """
                 }
             }
@@ -41,7 +41,7 @@ pipeline {
                     sh """
                         docker run --rm \
                         -v jenkins-data:/var/jenkins_home \
-                        -w /var/jenkins_home/workspace/${env.JOB_NAME} \
+                        -w /var/jenkins_home/workspace/\${JOB_NAME} \
                         ${DOCKER_IMAGE} etl.py ${INPUT_CSV} ${OUTPUT_CSV}
                     """
                 }

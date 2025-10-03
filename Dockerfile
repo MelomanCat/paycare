@@ -9,11 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# Install pytest directly
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install pytest==7.4.0 pandas==2.0.3
+
 COPY requirements.txt .
-RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# ENTRYPOINT let pass commands into container 
-ENTRYPOINT ["python"]
+ENTRYPOINT ["python3"]
