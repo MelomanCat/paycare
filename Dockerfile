@@ -9,13 +9,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install pytest directly
-RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install pytest==7.4.0 pandas==2.0.3
-
+# Сначала копируем и устанавливаем зависимости
 COPY requirements.txt .
+RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
+# ПОТОМ копируем ВСЕ остальные файлы проекта
 COPY . .
+
+# Проверяем, что скопировалось
+RUN echo "=== Contents of /app ===" && ls -la
+RUN echo "=== Contents of /app/tests ===" && ls -la tests/ || echo "No tests directory!"
 
 ENTRYPOINT ["python3"]
