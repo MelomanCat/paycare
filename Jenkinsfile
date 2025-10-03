@@ -10,17 +10,22 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                // Build image
-                sh "docker build --no-cache -t ${DOCKER_IMAGE} ."
+                script {
+                    sh "docker build --no-cache -t ${DOCKER_IMAGE} ."
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
                 script {
-                    docker.image('etl-image:latest').inside {
-                        sh 'pytest tests/ --junitxml=report.xml'
-                    }
+                    // Use volume jenkins-data, common for both containers
+                    sh """
+                        docker run --rm \
+                        -v jenkins-data:/var/jenkins_home \
+                        -w /var/jenkins_home/workspace/${env.JOB_NAME} \
+                        ${DOCKER_IMAGE} -m pytest tests/ --junitxml=report.xml
+                    """
                 }
             }
             post {
@@ -32,8 +37,14 @@ pipeline {
 
         stage('Run Docker Container') {
             steps {
-                // Run ETL script
-                sh "docker run --rm -v \$(pwd)/${INPUT_CSV}:/app/${INPUT_CSV} -v \$(pwd)/${OUTPUT_CSV}:/app/${OUTPUT_CSV} ${DOCKER_IMAGE} etl.py ${INPUT_CSV} ${OUTPUT_CSV}"
+                script {
+                    sh """
+                        docker run --rm \
+                        -v jenkins-data:/var/jenkins_home \
+                        -w /var/jenkins_home/workspace/${env.JOB_NAME} \
+                        ${DOCKER_IMAGE} etl.py ${INPUT_CSV} ${OUTPUT_CSV}
+                    """
+                }
             }
         }
     }
